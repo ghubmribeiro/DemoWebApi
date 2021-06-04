@@ -19,25 +19,95 @@ namespace DemoWebApi.Controllers
             return lista.ToList();
         }
 
-        // GET: api/Categorias/5
-        public string Get(int id)
+        // GET: api/Categorias/AC
+        [Route("api/categorias/{sigla}")]
+        public IHttpActionResult Get(string sigla)
         {
-            return "value";
+            var categoria = dc.Categorias.SingleOrDefault(c => c.Sigla == sigla);
+
+            if(categoria != null)
+            {
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.OK, categoria));
+            }
+
+            return ResponseMessage(Request.CreateResponse(HttpStatusCode.NotFound, "Categoria não existe"));
         }
 
         // POST: api/Categorias
-        public void Post([FromBody]string value)
+        public IHttpActionResult Post([FromBody]Categoria novaCategoria)
         {
+            Categoria categoria = dc.Categorias.FirstOrDefault(c => c.Sigla == novaCategoria.Sigla);
+
+            if(categoria != null)
+            {
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.Conflict, "Já existe uma categoria registada com essa sigla."));
+            }
+
+            dc.Categorias.InsertOnSubmit(novaCategoria);
+
+            try
+            {
+                dc.SubmitChanges();
+            }
+            catch (Exception e)
+            {
+
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.ServiceUnavailable, e));
+            }
+
+            return ResponseMessage(Request.CreateResponse(HttpStatusCode.OK));
         }
 
         // PUT: api/Categorias/5
-        public void Put(int id, [FromBody]string value)
+        public IHttpActionResult Put(int id, [FromBody]Categoria novaCategoria)
         {
+            Categoria categoria = dc.Categorias.FirstOrDefault(c => c.Sigla == novaCategoria.Sigla);
+
+            if (categoria == null)
+            {
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.NotFound, "Não existe nenhuma categoria com essa Sigla para poder alterar"));
+            }
+
+            categoria.Sigla = novaCategoria.Sigla;
+            categoria.Categoria1 = novaCategoria.Categoria1;
+
+            try
+            {
+                dc.SubmitChanges();
+            }
+            catch (Exception e)
+            {
+
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.ServiceUnavailable, e));
+            }
+
+            return ResponseMessage(Request.CreateResponse(HttpStatusCode.OK));
         }
 
-        // DELETE: api/Categorias/5
-        public void Delete(int id)
+        // DELETE: api/Categorias/CM
+        [Route("api/categorias/{sigla}")]
+        public IHttpActionResult Delete(string sigla)
         {
+            Categoria categoria = dc.Categorias.FirstOrDefault(c => c.Sigla == sigla);
+
+            if(categoria != null)
+            {
+                dc.Categorias.DeleteOnSubmit(categoria);
+
+                try
+                {
+                    dc.SubmitChanges();
+                }
+                catch (Exception e)
+                {
+
+                    return ResponseMessage(Request.CreateResponse(HttpStatusCode.ServiceUnavailable, e));
+                }
+
+                return ResponseMessage(Request.CreateResponse(HttpStatusCode.OK));
+            }
+
+            return ResponseMessage(Request.CreateResponse(HttpStatusCode.NotFound,"Não existe nenhuma categoria com essa Sigla para poder eliminar."));
         }
     }
 }
